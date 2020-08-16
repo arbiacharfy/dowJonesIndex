@@ -12,6 +12,7 @@ import java.util.List;
  * @author chaa060
  */
 
+@RequestMapping(path = "/api")
 public interface DowJonesIndexStockController {
 
     @RequestMapping(path = "/load")

@@ -5,12 +5,9 @@ import com.trading.DowJonesIndex.repository.DowJonesIndexStockRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -21,42 +18,34 @@ import java.util.List;
 public class DowJonesIndexStockServiceImpl implements DowJonesIndexStockService {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private static String ERROR_MSG = "An error occurred while processing the CSV file: ";
 
     @Autowired
     private DowJonesIndexStockRepository dowJonesIndexStockDAO;
 
-    String line = "";
-
+    String fileName = "dow_jones_index.csv";
 
     public void loadDowJonesIndexData() {
-        BufferedReader bufferedReader = null;
-        try {
-            bufferedReader = new BufferedReader(new FileReader("src/main/resources/dow_jones_index.csv"));
-            bufferedReader.readLine(); // consume first line (header) and ignore
-            line = bufferedReader.readLine();
-
-            List<DowJonesIndexStock> dowJonesIndexStocks = new ArrayList<>();
-            while ((line = bufferedReader.readLine()) != null) {
-                String[] data = line.split(",");
-                dowJonesIndexStocks.add(DowJonesIndexStockHelper.getDowJonesIndexStock(data));
+        List<DowJonesIndexStock> dowJonesIndexStocks = CsvHelper.loadObjectList(DowJonesIndexStock.class, fileName);
+        if (dowJonesIndexStocks.isEmpty()) {
+            logger.error(ERROR_MSG.concat(fileName));
+        } else {
+            try{
+                dowJonesIndexStockDAO.saveAll(dowJonesIndexStocks);
+            }catch (DataAccessException dataAccessException){
+                logger.error(dataAccessException.getMessage());
             }
-            dowJonesIndexStockDAO.saveAll(dowJonesIndexStocks);
-        } catch (IOException e) {
-            logger.info("log -> {}", line);
-            e.printStackTrace();
         }
     }
 
     @Override
     public List<DowJonesIndexStock> findDowJonesIndexByStock(String stock) {
-        List<DowJonesIndexStock> dowJonesIndexStocks = dowJonesIndexStockDAO.findByStock(stock);
-        return dowJonesIndexStocks;
+        return dowJonesIndexStockDAO.findByStock(stock);
     }
 
 
     public DowJonesIndexStock createDowJonesIndex(DowJonesIndexStock dowJonesIndexStock) {
         return dowJonesIndexStockDAO.save(dowJonesIndexStock);
     }
-
 
 }
