@@ -2,7 +2,6 @@ package com.trading.DowJonesIndex.service;
 
 import com.trading.DowJonesIndex.model.DowJonesIndexStock;
 import com.trading.DowJonesIndex.repository.DowJonesIndexStockRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -13,7 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
 
 /**
  * @author chaa060
@@ -43,6 +43,13 @@ class DowJonesIndexStockServiceImplTest {
     }
 
     @Test
+    void getDowJonesIndexByNullStock_Should_return_empty_collections() {
+        List<DowJonesIndexStock> dowJonesIndexStockList = dowJonesIndexStockService.findDowJonesIndexByStock(null);
+        assertTrue(dowJonesIndexStockList.isEmpty());
+        Mockito.verify(dowJonesIndexStockDAO, times(0)).findByStock(null);
+    }
+
+    @Test
     void add() {
         DowJonesIndexStock dowJonesIndexStock = getDowJonesIndexStock();
         Mockito.when(dowJonesIndexStockDAO.save((dowJonesIndexStock)))
@@ -52,6 +59,13 @@ class DowJonesIndexStockServiceImplTest {
 
         assertNotNull(dowJonesIndexSaved);
 
+    }
+
+    @Test
+    void add_with_null_object_should_return_null() {
+        DowJonesIndexStock dowJonesIndexSaved = dowJonesIndexStockService.createDowJonesIndex(null);
+        assertNull(dowJonesIndexSaved);
+        Mockito.verify(dowJonesIndexStockDAO, times(0)).save(dowJonesIndexSaved);
     }
 
     private DowJonesIndexStock getDowJonesIndexStock() {

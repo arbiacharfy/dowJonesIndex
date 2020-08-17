@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,7 +19,7 @@ import java.util.List;
 public class DowJonesIndexStockServiceImpl implements DowJonesIndexStockService {
 
     private Logger logger = LoggerFactory.getLogger(this.getClass());
-    private static String ERROR_MSG = "An error occurred while processing the CSV file: ";
+    private static String ERROR_LOAD_MSG = "An error occurred while processing the CSV file: ";
 
     @Autowired
     private DowJonesIndexStockRepository dowJonesIndexStockDAO;
@@ -28,11 +29,12 @@ public class DowJonesIndexStockServiceImpl implements DowJonesIndexStockService 
     public void loadDowJonesIndexData() {
         List<DowJonesIndexStock> dowJonesIndexStocks = CsvHelper.loadObjectList(DowJonesIndexStock.class, fileName);
         if (dowJonesIndexStocks.isEmpty()) {
-            logger.error(ERROR_MSG.concat(fileName));
+            logger.info(ERROR_LOAD_MSG.concat(fileName));
         } else {
-            try{
+            try {
                 dowJonesIndexStockDAO.saveAll(dowJonesIndexStocks);
-            }catch (DataAccessException dataAccessException){
+                logger.info("loading data done successfully");
+            } catch (DataAccessException dataAccessException) {
                 logger.error(dataAccessException.getMessage());
             }
         }
@@ -40,12 +42,32 @@ public class DowJonesIndexStockServiceImpl implements DowJonesIndexStockService 
 
     @Override
     public List<DowJonesIndexStock> findDowJonesIndexByStock(String stock) {
-        return dowJonesIndexStockDAO.findByStock(stock);
-    }
 
+        try {
+            if (stock == null) {
+                logger.info("stock is null");
+                return Collections.emptyList();
+            }
+            List<DowJonesIndexStock> dowJonesIndexStocks = dowJonesIndexStockDAO.findByStock(stock);
+            if(dowJonesIndexStocks.isEmpty())
+                logger.info("no item matches your search");
+            return dowJonesIndexStocks;
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return Collections.emptyList();
+        }
+    }
 
     public DowJonesIndexStock createDowJonesIndex(DowJonesIndexStock dowJonesIndexStock) {
-        return dowJonesIndexStockDAO.save(dowJonesIndexStock);
+        try {
+            if(dowJonesIndexStock == null){
+                logger.info("can't insert null ");
+                return null;
+            }
+            return dowJonesIndexStockDAO.save(dowJonesIndexStock);
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+            return null;
+        }
     }
-
 }
